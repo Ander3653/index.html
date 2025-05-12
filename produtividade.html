@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Inforganix | Produtividade</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<div id="menuHamburguer" onclick="abrirMenu()">☰</div>
+
+<nav id="menuLateral">
+  <ul>
+    <li><a href="index.html">🏠 Início</a></li>
+    <li><a href="escola.html">📚 Escola</a></li>
+    <li><a href="agendas.html">📝 Agendas</a></li>
+    <li><a href="produtividade.html">📈 Produtividade</a></li>
+  </ul>
+</nav>
+
+  <header>
+    <h1>Produtividade Semanal</h1>
+    <p>Veja seu progresso com base nas tarefas concluídas</p>
+  </header>
+
+  <main class="container">
+
+    <!-- Botões -->
+    <div class="botoes-produtividade">
+      <button onclick="atualizarGrafico()">🔄 Atualizar gráfico</button>
+      <button onclick="exportarGrafico()">📷 Exportar como imagem</button>
+    </div>
+
+    <!-- Gráfico -->
+    <canvas id="graficoProdutividade" height="150"></canvas>
+
+    <!-- Porcentagem -->
+    <p id="porcentagemProdutividade" style="text-align: center; font-weight: bold; font-size: 1.1em; margin-top: 10px;"></p>
+  </main>
+
+  <footer>
+    <p>Inforganix © 2025 - Monitor de Produtividade</p>
+  </footer>
+
+  <script>
+    let grafico;
+
+    function diaDaSemana(dataISO) {
+      const dias = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+      const data = new Date(dataISO);
+      return dias[data.getDay()];
+    }
+
+    function contarConcluidasPorDia() {
+      const tarefasHTML = localStorage.getItem("inforganix_agendas");
+      if (!tarefasHTML) return { contagem: {}, total: 0, concluidas: 0 };
+
+      const tempDiv = document.createElement("div");
+      tempDiv.innerHTML = tarefasHTML;
+
+      const tarefas = tempDiv.querySelectorAll(".task");
+      const concluidas = tempDiv.querySelectorAll(".task.done");
+
+      const contagem = {
+        Dom: 0, Seg: 0, Ter: 0, Qua: 0, Qui: 0, Sex: 0, Sáb: 0
+      };
+
+      concluidas.forEach(tarefa => {
+        const detalhes = tarefa.querySelector(".detalhes");
+        if (detalhes) {
+          const texto = detalhes.innerText;
+          const match = texto.match(/Entrega: (\d{2}\/\d{2}\/\d{4})/);
+          if (match) {
+            const dataBR = match[1];
+            const [dia, mes, ano] = dataBR.split('/');
+            const dataISO = `${ano}-${mes}-${dia}`;
+            const diaSemana = diaDaSemana(dataISO);
+            contagem[diaSemana]++;
+          }
+        }
+      });
+
+      return {
+        contagem: contagem,
+        total: tarefas.length,
+        concluidas: concluidas.length
+      };
+    }
+
+    function atualizarGrafico() {
+      const resultado = contarConcluidasPorDia();
+      const dados = resultado.contagem;
+
+      if (grafico) {
+        grafico.data.datasets[0].data = Object.values(dados);
+        grafico.update();
+      }
+
+      const porcentagem = resultado.total > 0
+        ? Math.round((resultado.concluidas / resultado.total) * 100)
+        : 0;
+
+      document.getElementById("porcentagemProdutividade").innerText =
+        `Produtividade atual: ${porcentagem}% (${resultado.concluidas} de ${resultado.total} tarefas concluídas)`;
+    }
+
+    function exportarGrafico() {
+      const canvas = document.getElementById("graficoProdutividade");
+      const imagem = canvas.toDataURL("image/png");
+
+      const link = document.createElement("a");
+      link.href = imagem;
+      link.download = "grafico-produtividade.png";
+      link.click();
+    }
+
+    window.onload = () => {
+      const resultado = contarConcluidasPorDia();
+      const dados = resultado.contagem;
+
+      const ctx = document.getElementById("graficoProdutividade").getContext("2d");
+
+      grafico = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: Object.keys(dados),
+          datasets: [{
+            label: 'Tarefas Concluídas',
+            data: Object.values(dados),
+            backgroundColor: '#42a5f5',
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Quantidade'
+              }
+            }
+          }
+        }
+      });
+
+      atualizarGrafico();
+    };
+  </script>
+
+</body>
+</html>

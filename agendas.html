@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Inforganix | Agendas</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div id="menuHamburguer" onclick="abrirMenu()">☰</div>
+
+<nav id="menuLateral">
+  <ul>
+    <li><a href="index.html">🏠 Início</a></li>
+    <li><a href="escola.html">📚 Escola</a></li>
+    <li><a href="agendas.html">📝 Agendas</a></li>
+    <li><a href="produtividade.html">📈 Produtividade</a></li>
+  </ul>
+</nav>
+
+
+  <header>
+    <h1>Agendas</h1>
+    <p>Organize seus TPCs, testes, leituras e horários</p>
+  </header>
+
+  <div class="resumo-agenda">
+    <p><strong>Total:</strong> <span id="totalTarefas">0</span></p>
+    <p><strong>Concluídas:</strong> <span id="tarefasConcluidas">0</span></p>
+  </div>
+
+  <main class="container">
+
+    <!-- Formulário -->
+    <div class="task-input">
+      <select id="categoria">
+        <option value="tpc">📘 TPC</option>
+        <option value="teste">📝 Teste</option>
+        <option value="leitura">📖 Leitura</option>
+        <option value="horario">🕐 Horário</option>
+      </select>
+
+      <input type="text" id="novaTarefa" placeholder="Digite sua tarefa...">
+      <input type="date" id="dataTarefa">
+
+      <select id="prioridade">
+        <option value="baixa">Baixa</option>
+        <option value="media">Média</option>
+        <option value="alta">Alta</option>
+      </select>
+
+      <button onclick="adicionarTarefa()">Adicionar</button>
+    </div>
+
+    <!-- Lista de tarefas -->
+    <div id="listaTarefas" class="task-list"></div>
+
+  </main>
+
+  <footer>
+    <p>Inforganix © 2025 - Agenda Estudantil</p>
+  </footer>
+
+  <script>
+    function categoriaLabel(cat) {
+      switch (cat) {
+        case "tpc": return "📘 TPC";
+        case "teste": return "📝 Teste";
+        case "leitura": return "📖 Leitura";
+        case "horario": return "🕐 Horário";
+        default: return "";
+      }
+    }
+
+    function salvarTarefas() {
+      const lista = document.getElementById("listaTarefas").innerHTML;
+      localStorage.setItem("inforganix_agendas", lista);
+    }
+
+    function carregarTarefas() {
+      const salvo = localStorage.getItem("inforganix_agendas");
+      if (salvo) {
+        document.getElementById("listaTarefas").innerHTML = salvo;
+
+        document.querySelectorAll(".task .task-buttons button").forEach(btn => {
+          if (btn.innerText === "Concluir") {
+            btn.onclick = () => {
+              btn.closest(".task").classList.toggle("done");
+              salvarTarefas();
+              atualizarContador();
+            };
+          } else if (btn.innerText === "Remover") {
+            btn.onclick = () => {
+              btn.closest(".task").remove();
+              salvarTarefas();
+              atualizarContador();
+            };
+          }
+        });
+      }
+      atualizarContador();
+    }
+
+    function adicionarTarefa() {
+      const texto = document.getElementById("novaTarefa").value.trim();
+      const categoria = document.getElementById("categoria").value;
+      const data = document.getElementById("dataTarefa").value;
+      const prioridade = document.getElementById("prioridade").value;
+
+      if (texto === "") return;
+
+      const tarefa = document.createElement("div");
+      tarefa.className = "task " + categoria + " " + prioridade;
+
+      const titulo = document.createElement("h3");
+      titulo.innerText = texto;
+
+      const categoriaTag = document.createElement("span");
+      categoriaTag.className = "categoria-tag";
+      categoriaTag.innerText = categoriaLabel(categoria);
+
+      const detalhes = document.createElement("div");
+      detalhes.className = "detalhes";
+      detalhes.innerText = `Entrega: ${data ? formatarData(data) : "Sem data"} | Prioridade: ${prioridade}`;
+
+      const areaTitulo = document.createElement("div");
+      areaTitulo.appendChild(titulo);
+      areaTitulo.appendChild(categoriaTag);
+      areaTitulo.appendChild(detalhes);
+
+      const botoes = document.createElement("div");
+      botoes.className = "task-buttons";
+
+      const botaoConcluir = document.createElement("button");
+      botaoConcluir.innerText = "Concluir";
+      botaoConcluir.onclick = () => {
+        tarefa.classList.toggle("done");
+        salvarTarefas();
+        atualizarContador();
+      };
+
+      const botaoRemover = document.createElement("button");
+      botaoRemover.innerText = "Remover";
+      botaoRemover.onclick = () => {
+        tarefa.remove();
+        salvarTarefas();
+        atualizarContador();
+      };
+
+      botoes.appendChild(botaoConcluir);
+      botoes.appendChild(botaoRemover);
+
+      tarefa.appendChild(areaTitulo);
+      tarefa.appendChild(botoes);
+
+      document.getElementById("listaTarefas").appendChild(tarefa);
+      document.getElementById("novaTarefa").value = "";
+      document.getElementById("dataTarefa").value = "";
+      document.getElementById("prioridade").value = "baixa";
+
+      salvarTarefas();
+      atualizarContador();
+    }
+
+    function atualizarContador() {
+      const todas = document.querySelectorAll(".task");
+      const concluidas = document.querySelectorAll(".task.done");
+      document.getElementById("totalTarefas").innerText = todas.length;
+      document.getElementById("tarefasConcluidas").innerText = concluidas.length;
+    }
+
+    function formatarData(dataISO) {
+      const [ano, mes, dia] = dataISO.split("-");
+      return `${dia}/${mes}/${ano}`;
+    }
+
+    window.onload = carregarTarefas;
+  </script>
+</body>
+</html>
